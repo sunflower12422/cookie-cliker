@@ -14,38 +14,18 @@ body {
     transition: all 0.5s ease;
 }
 
-/* ========== ЭТАПЫ И ФОНЫ ========== */
-body.stage-0 {
-    background: linear-gradient(135deg, #2c3e50, #1a1a1a);
-}
-
-body.stage-1 {
-    background: linear-gradient(135deg, #8b4513, #2c1810);
-}
-
-body.stage-2 {
-    background: linear-gradient(135deg, #4682b4, #1e3a5f);
-}
-
-body.stage-3 {
-    background: linear-gradient(135deg, #4b0082, #1a0b2e);
-}
-
-body.stage-4 {
-    background: linear-gradient(135deg, #8b0000, #2d1a1a);
-}
-
-body.stage-5 {
-    background: linear-gradient(135deg, #ffd700, #b8860b);
-    animation: stage5Bg 3s infinite alternate;
-}
+body.stage-0 { background: linear-gradient(135deg, #2c3e50, #1a1a1a); }
+body.stage-1 { background: linear-gradient(135deg, #8b4513, #2c1810); }
+body.stage-2 { background: linear-gradient(135deg, #4682b4, #1e3a5f); }
+body.stage-3 { background: linear-gradient(135deg, #4b0082, #1a0b2e); }
+body.stage-4 { background: linear-gradient(135deg, #8b0000, #2d1a1a); }
+body.stage-5 { background: linear-gradient(135deg, #ffd700, #b8860b); animation: stage5Bg 3s infinite alternate; }
 
 @keyframes stage5Bg {
     from { filter: hue-rotate(0deg); }
     to { filter: hue-rotate(30deg); }
 }
 
-/* ========== ИГРОВОЙ КОНТЕЙНЕР ========== */
 .game-container {
     max-width: 800px;
     width: 90%;
@@ -60,7 +40,6 @@ body.stage-5 {
     z-index: 10;
 }
 
-/* ========== КУРСОР ========== */
 .currency-header {
     text-align: center;
     margin-bottom: 20px;
@@ -70,7 +49,6 @@ body.stage-5 {
     font-size: 1.2rem;
     color: #ffd700;
     letter-spacing: 3px;
-    text-shadow: 0 0 10px rgba(255,215,0,0.5);
 }
 
 .currency-amount {
@@ -82,7 +60,6 @@ body.stage-5 {
     font-family: 'Courier New', monospace;
 }
 
-/* ========== СТАТИСТИКА ========== */
 .stats {
     display: flex;
     justify-content: space-between;
@@ -93,7 +70,6 @@ body.stage-5 {
     font-size: 1.2rem;
 }
 
-/* ========== КОТ ИЗ СЛИВКИ ШОУ (ТОЛЬКО ФОТО) ========== */
 .cat-container {
     position: relative;
     display: flex;
@@ -124,48 +100,11 @@ body.stage-5 {
     filter: drop-shadow(0 0 50px #ffd700);
 }
 
-/* Рамки для разных этапов */
-body.stage-0 .cat {
-    border: 4px solid #ffd700;
-}
-
-body.stage-1 .cat {
-    border: 4px solid #ff4500;
-    box-shadow: 0 0 40px rgba(255,69,0,0.5);
-}
-
-body.stage-2 .cat {
-    border: 4px solid #00ced1;
-    box-shadow: 0 0 40px rgba(0,206,209,0.5);
-}
-
-body.stage-3 .cat {
-    border: 4px solid #9370db;
-    box-shadow: 0 0 40px rgba(147,112,219,0.5);
-}
-
-body.stage-4 .cat {
-    border: 4px solid #ff1493;
-    box-shadow: 0 0 40px rgba(255,20,147,0.5);
-}
-
-body.stage-5 .cat {
-    border: 4px solid #ffd700;
-    box-shadow: 0 0 60px rgba(255,215,0,0.8);
-    animation: catGlow 2s infinite alternate;
-}
-
-@keyframes catGlow {
-    from { box-shadow: 0 0 40px rgba(255,215,0,0.8); }
-    to { box-shadow: 0 0 80px rgba(255,215,0,1); }
-}
-
 @keyframes catFloat {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-15px); }
 }
 
-/* ========== ПУЗЫРЁК КОТА ========== */
 .speech-bubble {
     position: absolute;
     top: -30px;
@@ -194,18 +133,15 @@ body.stage-5 .cat {
     100% { transform: scale(1); }
 }
 
-/* ========== ФРАЗА КОТА ========== */
 .cat-phrase {
     text-align: center;
     font-size: 1.3rem;
     color: #ffd700;
     margin: 20px 0;
     font-style: italic;
-    height: 40px;
-    text-shadow: 0 0 10px rgba(255,215,0,0.5);
+    min-height: 60px;
 }
 
-/* ========== ПРОГРЕСС-БАР ========== */
 .progress-section {
     margin: 30px 0;
 }
@@ -235,7 +171,24 @@ body.stage-5 .cat {
     border-radius: 10px;
 }
 
-/* ========== МАГАЗИН ========== */
+.achievements-btn {
+    width: 100%;
+    padding: 15px;
+    background: rgba(255,215,0,0.2);
+    color: gold;
+    border: 2px solid gold;
+    border-radius: 50px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin: 20px 0;
+    font-weight: bold;
+}
+
+.achievements-btn:hover {
+    background: gold;
+    color: black;
+}
+
 .shop {
     background: rgba(0,0,0,0.5);
     border-radius: 20px;
@@ -303,199 +256,123 @@ body.stage-5 .cat {
     border-radius: 20px;
     font-size: 0.8rem;
 }
-.donate-btn {
+
+.donate-btn, .reset-btn {
     width: 100%;
     padding: 15px;
-    background: rgba(255, 215, 0, 0.2);
-    color: gold;
-    border: 2px solid gold;
     border-radius: 50px;
     font-size: 1.2rem;
     cursor: pointer;
     margin-top: 10px;
     font-weight: bold;
+    border: none;
 }
+
+.donate-btn {
+    background: rgba(255, 215, 0, 0.2);
+    color: gold;
+    border: 2px solid gold;
+}
+
 .donate-btn:hover {
     background: gold;
     color: black;
 }
-/* ========== КНОПКА СБРОСА ========== */
+
 .reset-btn {
-    width: 100%;
-    padding: 15px;
     background: rgba(139,0,0,0.5);
     color: white;
     border: 1px solid #8b0000;
-    border-radius: 50px;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: all 0.3s;
-    margin-top: 20px;
 }
 
 .reset-btn:hover {
     background: #8b0000;
-    transform: scale(1.05);
 }
 
-/* ========== ЭФФЕКТ КЛИКА ========== */
-.click-effect {
+.version {
     position: fixed;
-    pointer-events: none;
-    color: #ffd700;
-    font-size: 2rem;
-    font-weight: bold;
-    text-shadow: 0 0 20px gold;
-    animation: clickFloat 1s ease-out forwards;
+    top: 10px;
+    right: 15px;
+    color: rgba(255, 215, 0, 0.4);
+    font-size: 0.9rem;
     z-index: 1000;
+    font-family: 'Courier New', monospace;
 }
 
-@keyframes clickFloat {
-    0% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(-100px) scale(1.5);
-    }
+.corner-item {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    cursor: pointer;
+    z-index: 9998;
+    transition: transform 0.2s;
 }
 
-/* ========== АДАПТИВ ========== */
-@media (max-width: 600px) {
-    .cat {
-        width: 200px;
-        height: 200px;
-    }
-    .currency-amount {
-        font-size: 3rem;
-    }
-    .upgrades {
-        grid-template-columns: 1fr;
-    }
-    .stats {
-        flex-direction: column;
-        gap: 10px;
-    }
+.corner-item:hover {
+    transform: scale(1.1);
 }
-.achievements {
-    background: rgba(0,0,0,0.5);
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 9999;
+}
+
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1a1a1a;
+    border: 3px solid #ffd700;
     border-radius: 20px;
     padding: 20px;
-    margin: 20px 0;
-    text-align: left;
-}
-
-.achievements h3 {
-    color: gold;
-    margin-bottom: 15px;
-    text-align: center;
-    font-size: 1.5rem;
-}
-
-.achievement {
-    padding: 12px 15px;
-    margin: 10px 0;
-    background: rgba(255,255,255,0.05);
-    border-radius: 10px;
-    border-left: 5px solid #444;
-    transition: 0.3s;
-}
-
-.achievement.done {
-    border-left: 5px solid gold;
-    background: rgba(255,215,0,0.1);
-}
-
-.ach-title {
-    color: white;
-    font-size: 1.2rem;
-    font-weight: bold;
-    margin-bottom: 4px;
-}
-
-.achievement.done .ach-title {
-    color: gold;
-}
-
-.ach-desc {
-    color: #aaa;
-    font-size: 0.9rem;
-    font-style: italic;
-}
-/* ========== УВЕДОМЛЕНИЯ АЧИВОК ========== */
-.achievement-popup {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-    border-left: 6px solid #4CAF50;
-    border-radius: 12px;
-    padding: 15px 25px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    transform: translateX(400px);
-    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     z-index: 10000;
-    border: 1px solid #4CAF50;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 0 100px rgba(0,0,0,0.9);
 }
 
-.achievement-popup.show {
-    transform: translateX(0);
+.achievement-window {
+    max-height: 400px;
+    overflow-y: auto;
 }
 
-.popup-icon {
-    font-size: 2.5rem;
-    filter: drop-shadow(0 0 10px #4CAF50);
-}
-
-.popup-content {
-    text-align: left;
-}
-
-.popup-title {
-    font-size: 1.3rem;
-    font-weight: bold;
-    color: #4CAF50;
-    margin-bottom: 5px;
-}
-
-.popup-desc {
-    font-size: 0.9rem;
-    color: #aaa;
-}
-
-/* ========== СТИЛИ АЧИВОК В МЕНЮ ========== */
-.achievement {
-    padding: 12px 15px;
-    margin: 10px 0;
-    background: rgba(255,255,255,0.05);
+.achievement-item {
+    padding: 10px;
+    margin: 5px 0;
+    background: rgba(255,255,255,0.1);
     border-radius: 10px;
-    border-left: 5px solid #444;
-    transition: 0.3s;
+    border-left: 4px solid #4CAF50;
 }
 
-.achievement.unlocked {
-    border-left: 5px solid #4CAF50;
-    background: rgba(76, 175, 80, 0.1);
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+.achievement-item.locked {
+    border-left-color: #444;
+    opacity: 0.6;
 }
 
-.achievement.unlocked .ach-title {
-    color: #4CAF50;
-}
-
-.ach-title {
-    color: white;
-    font-size: 1.2rem;
+.achievement-item .title {
     font-weight: bold;
-    margin-bottom: 4px;
+    color: #ffd700;
 }
 
-.ach-desc {
+.achievement-item .desc {
+    font-size: 12px;
     color: #aaa;
-    font-size: 0.9rem;
-    font-style: italic;
+}
+
+@keyframes fadeOut {
+    0% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { opacity: 0; visibility: hidden; }
+}
+
+@media (max-width: 600px) {
+    .cat { width: 200px; height: 200px; }
+    .currency-amount { font-size: 3rem; }
+    .upgrades { grid-template-columns: 1fr; }
 }
