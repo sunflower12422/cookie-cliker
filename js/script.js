@@ -1,15 +1,8 @@
 // ========== ФРАЗЫ КОТА ==========
 const CAT_PHRASES = [
-    "КУКИИИ!",
-    "ДАЙ КУКИ!",
-    "ЕЩЁ КУКИ!",
-    "МОИ КУКИ!",
-    "КУКИ КУКИ КУКИ!",
-    "ХОЧУ КУКИ!",
-    "КУКИ ЭТО ЖИЗНЬ!",
-    "СЛИВКИ ШОУ!",
-    "ТЫКАЙ В КОТА!",
-    "НЕ ЖАДНИЧАЙ!"
+    "КУКИИИ!", "ДАЙ КУКИ!", "ЕЩЁ КУКИ!", "МОИ КУКИ!",
+    "КУКИ КУКИ КУКИ!", "ХОЧУ КУКИ!", "КУКИ ЭТО ЖИЗНЬ!",
+    "СЛИВКИ ШОУ!", "ТЫКАЙ В КОТА!", "НЕ ЖАДНИЧАЙ!"
 ];
 
 // ========== ЭТАПЫ КОТА ==========
@@ -34,15 +27,20 @@ let game = {
     }
 };
 
-// ========== АЧИВКИ ==========
-let achievements = {
-    ach1: false, // КУКИ КЛИКЕР
-    ach2: false, // СПИДРАНЕР
-    ach3: false  // ОСТАНОВИСЬ
+let permanentAchievements = {
+    polish: false
 };
 
-// Время старта
+let achievements = {
+    ach1: false,
+    ach2: false,
+    ach3: false
+};
+
 let startTime = Date.now() / 1000;
+let totalClicks = 0;
+let clickStreak = 0;
+let lastClickTime = 0;
 
 // ========== ЗАГРУЗКА ==========
 function loadGame() {
@@ -52,170 +50,225 @@ function loadGame() {
             let data = JSON.parse(saved);
             if (data.game) game = data.game;
             if (data.achievements) achievements = data.achievements;
-        } catch (e) {}
+            if (data.permanentAchievements) permanentAchievements = data.permanentAchievements;
+            if (data.totalClicks) totalClicks = data.totalClicks;
+        } catch(e) {}
     }
-    
-    // Обновляем классы ачивок
-    if (achievements.ach1) document.getElementById('ach1')?.classList.add('unlocked');
-    if (achievements.ach2) document.getElementById('ach2')?.classList.add('unlocked');
-    if (achievements.ach3) document.getElementById('ach3')?.classList.add('unlocked');
-    
     updateUI();
 }
 
-// ========== СОХРАНЕНИЕ ==========
 function saveGame() {
-    let data = { game: game, achievements: achievements };
-    localStorage.setItem('cookieCatGame', JSON.stringify(data));
+    localStorage.setItem('cookieCatGame', JSON.stringify({ 
+        game, achievements, permanentAchievements, totalClicks
+    }));
 }
 
-// ========== ПОКАЗ УВЕДОМЛЕНИЯ ==========
-function showAchievementPopup(title, desc) {
-    // Удаляем старое
-    let old = document.getElementById('ach-popup');
-    if (old) old.remove();
+// ========== ОКНО ДОСТИЖЕНИЙ ==========
+function showAchievementsWindow() {
+    const oldOverlay = document.getElementById('achievements-overlay');
+    if (oldOverlay) oldOverlay.remove();
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'achievements-overlay';
+    overlay.className = 'modal-overlay';
+    
+    const windowDiv = document.createElement('div');
+    windowDiv.className = 'modal';
+    windowDiv.innerHTML = `
+        <h2 style="color: #ffd700; text-align: center; margin-bottom: 20px;">🏆 ДОСТИЖЕНИЯ</h2>
+        <div class="achievement-window" id="achievements-list"></div>
+        <button id="close-achievements" style="margin-top: 20px; padding: 10px; width: 100%; background: #ffd700; color: black; border: none; border-radius: 10px; cursor: pointer;">ЗАКРЫТЬ</button>
+    `;
+    
+    overlay.appendChild(windowDiv);
+    document.body.appendChild(overlay);
+    
+    const list = document.getElementById('achievements-list');
+    const allAchievements = [
+        { title: '🥚 КУКИ КЛИКЕР', desc: 'прошел куки кликер', unlocked: achievements.ach1 },
+        { title: '⚡ СПИДРАНЕР', desc: 'пройти куки кликер быстрее создателя', unlocked: achievements.ach2 },
+        { title: '🛑 ОСТАНОВИСЬ', desc: 'набрать 2 миллиона куки', unlocked: achievements.ach3 },
+        { title: '🎵 Tylko jedno w głowie mam', desc: 'Koksu pięć gram, odlecieć sam', unlocked: permanentAchievements.polish }
+    ];
+    
+    allAchievements.forEach(ach => {
+        const div = document.createElement('div');
+        div.className = `achievement-item ${ach.unlocked ? '' : 'locked'}`;
+        div.innerHTML = `
+            <div class="title">${ach.unlocked ? '✅ ' : '🔒 '}${ach.title}</div>
+            <div class="desc">${ach.desc}</div>
+        `;
+        list.appendChild(div);
+    });
+    
+    document.getElementById('close-achievements').onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+}
 
-    // Создаём новое
-    const popup = document.createElement('div');
-    popup.id = 'ach-popup';
-    popup.style.cssText = `
+function showNotification(msg) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        background: #1a1a1a;
-        border-left: 6px solid #4CAF50;
+        background: #4CAF50;
+        color: white;
+        padding: 10px 20px;
         border-radius: 10px;
-        padding: 15px 20px;
-        box-shadow: 0 5px 20px black;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        z-index: 999999;
-        border: 1px solid #4CAF50;
-        transform: translateX(120%);
-        transition: transform 0.5s;
+        z-index: 10001;
+        animation: fadeOut 3s forwards;
     `;
+    notification.textContent = msg;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+// ========== ПАСХАЛКИ ==========
+function checkClickStreak() {
+    const now = Date.now();
+    if (now - lastClickTime < 1000) {
+        clickStreak++;
+    } else {
+        clickStreak = 1;
+    }
+    lastClickTime = now;
     
-    popup.innerHTML = `
-        <div style="font-size: 40px;">🏆</div>
-        <div>
-            <div style="color: #4CAF50; font-size: 20px; font-weight: bold;">${title}</div>
-            <div style="color: #aaa; font-size: 14px;">${desc}</div>
-        </div>
-    `;
-    
-    document.body.appendChild(popup);
-    
-    // Показываем
-    setTimeout(() => popup.style.transform = 'translateX(0)', 50);
-    
-    // Убираем через 5 секунд
-    setTimeout(() => {
-        popup.style.transform = 'translateX(120%)';
-        setTimeout(() => popup.remove(), 500);
-    }, 5000);
-    
-    // Кот радуется
-    const bubble = document.getElementById('speechBubble');
-    if (bubble) {
-        bubble.textContent = "🏆 АЧИВКА!";
-        bubble.classList.add('show');
-        setTimeout(() => bubble.classList.remove('show'), 5000);
+    if (clickStreak === 100) {
+        showCatMessage("ТЫ РОБОТ?");
+        showNotification("🤖 100 кликов подряд!");
     }
 }
 
-// ========== ПРОВЕРКА АЧИВОК ==========
-function checkAchievements() {
-    let changed = false;
+function checkCookieMilestones() {
+    if (Math.floor(game.totalCookies) === 69) showCatMessage("nice");
+    if (Math.floor(game.totalCookies) === 420) showCatMessage("blaze it");
+    if (Math.floor(game.totalCookies) === 1337) showCatMessage("LEET");
     
-    // Ачивка 1: КУКИ КЛИКЕР (этап 5)
-    if (!achievements.ach1 && game.stage >= 5) {
-        achievements.ach1 = true;
-        document.getElementById('ach1')?.classList.add('unlocked');
-        showAchievementPopup('🥚 КУКИ КЛИКЕР', 'прошел куки кликер');
-        changed = true;
-    }
-    
-    // Ачивка 2: СПИДРАНЕР (быстрее 1903 секунд)
-    if (!achievements.ach2 && game.stage >= 5) {
-        let playTime = Math.floor(Date.now() / 1000 - startTime);
-        if (playTime < 1903) {
-            achievements.ach2 = true;
-            document.getElementById('ach2')?.classList.add('unlocked');
-            showAchievementPopup('⚡ СПИДРАНЕР', 'пройти куки кликер быстрее создателя');
-            changed = true;
-        }
-    }
-    
-    // Ачивка 3: 2 МИЛЛИОНА КУКИ
-    if (!achievements.ach3 && game.totalCookies >= 2000000) {
-        achievements.ach3 = true;
-        document.getElementById('ach3')?.classList.add('unlocked');
-        showAchievementPopup('🛑 ОСТАНОВИСЬ', 'набрать 2 миллиона куки');
-        game.clickPower += 200;
-        changed = true;
-    }
-    
-    if (changed) {
+    if (totalClicks === 1000) {
+        game.cookies += 1000;
+        showCatMessage("1000 КЛИКОВ! +1000 КУКИ");
+        showNotification("🎉 1000 кликов! Бонус 1000 куки!");
+        saveGame();
         updateUI();
+    }
+}
+
+function showCatMessage(msg) {
+    const bubble = document.getElementById('speechBubble');
+    if (bubble) {
+        bubble.textContent = msg;
+        bubble.classList.add('show');
+        setTimeout(() => bubble.classList.remove('show'), 4000);
+    }
+    document.getElementById('catPhrase').textContent = msg;
+    setTimeout(() => {
+        document.getElementById('catPhrase').textContent = "КЛИКНИ МЕНЯ!";
+    }, 5000);
+}
+
+// ========== СЕКРЕТНАЯ КОМАНДА ==========
+window.catSay = function(text) {
+    if (text && text.length > 0) {
+        showCatMessage(text);
+        console.log(`🐱 Кот сказал: "${text}"`);
+    } else {
+        console.log('Использование: catSay("текст")');
+    }
+};
+
+// ========== УГЛОВОЙ ЭЛЕМЕНТ ==========
+function initCornerItem() {
+    const corner = document.getElementById('cornerItem');
+    const isApple = Math.random() < 0.01;
+    
+    if (isApple) {
+        corner.innerHTML = '<div style="font-size: 32px;">🍎</div>';
+        corner.dataset.type = 'apple';
+    } else {
+        corner.innerHTML = '<img src="assets/images/sunflower.png" style="width: 32px; height: 32px;">';
+        corner.dataset.type = 'sunflower';
+    }
+    
+    corner.onclick = () => {
+        if (corner.dataset.type === 'apple') {
+            window.open('https://rutube.ru/video/055e34d68e4e80a6145efdf512aeb86e/?r=wd', '_blank');
+            if (!permanentAchievements.polish) {
+                permanentAchievements.polish = true;
+                saveGame();
+                showNotification('🏆 НОВОЕ ДОСТИЖЕНИЕ: Tylko jedno w głowie mam!');
+                showCatMessage('Tylko jedno w głowie mam...');
+            }
+        } else {
+            window.open('https://github.com/sunflower12422', '_blank');
+        }
+    };
+}
+
+// ========== ФУНКЦИИ КЛИКЕРА ==========
+function checkStage() {
+    let newStage = game.stage;
+    for (let i = 0; i < STAGES.length; i++) {
+        if (game.totalCookies >= STAGES[i].required) newStage = i;
+    }
+    if (newStage > game.stage) {
+        game.stage = newStage;
+        game.clickPower = STAGES[newStage].clickPower + (game.upgrades.clickPower.level - 1);
+        document.getElementById('cat').style.backgroundImage = `url('${STAGES[newStage].image}')`;
+        document.body.className = '';
+        document.body.classList.add(`stage-${newStage}`);
+        alert(`✨ НОВЫЙ ЭТАП: ${STAGES[newStage].name}! ✨\n⚡ Удар: +${STAGES[newStage].clickPower} 🍪`);
+        checkAchievements();
         saveGame();
     }
 }
 
-// ========== КЛИК ПО КОТУ ==========
-document.getElementById('cat').addEventListener('click', function(e) {
-    game.cookies += game.clickPower;
-    game.totalCookies += game.clickPower;
-
-    this.style.transform = 'scale(1.2)';
-    setTimeout(() => this.style.transform = 'scale(1)', 100);
-
-    const bubble = document.getElementById('speechBubble');
-    bubble.textContent = CAT_PHRASES[Math.floor(Math.random() * CAT_PHRASES.length)];
-    bubble.classList.add('show');
-    setTimeout(() => bubble.classList.remove('show'), 4000);
-
-    document.getElementById('catPhrase').textContent = 
-        CAT_PHRASES[Math.floor(Math.random() * CAT_PHRASES.length)];
-    setTimeout(() => {
-        document.getElementById('catPhrase').textContent = "КЛИКНИ МЕНЯ!";
-    }, 5000);
-
-    checkStage();
-    updateUI();
-    saveGame();
-    checkAchievements();
-});
-
-// ========== ПРОВЕРКА ЭТАПОВ ==========
-function checkStage() {
-    let newStage = game.stage;
-
-    for (let i = 0; i < STAGES.length; i++) {
-        if (game.totalCookies >= STAGES[i].required) {
-            newStage = i;
+function checkAchievements() {
+    let changed = false;
+    if (!achievements.ach1 && game.stage >= 5) {
+        achievements.ach1 = true;
+        showNotification('🏆 ДОСТИЖЕНИЕ: КУКИ КЛИКЕР');
+        changed = true;
+    }
+    if (!achievements.ach2 && game.stage >= 5) {
+        let playTime = Math.floor(Date.now() / 1000 - startTime);
+        if (playTime < 1903) {
+            achievements.ach2 = true;
+            showNotification('🏆 ДОСТИЖЕНИЕ: СПИДРАНЕР');
+            changed = true;
         }
     }
-
-    if (newStage > game.stage) {
-        game.stage = newStage;
-        game.clickPower = STAGES[newStage].clickPower + (game.upgrades.clickPower.level - 1);
-
-        document.getElementById('cat').style.backgroundImage = `url('${STAGES[newStage].image}')`;
-        document.body.className = '';
-        document.body.classList.add(`stage-${newStage}`);
-
-        alert(`✨ НОВЫЙ ЭТАП: ${STAGES[newStage].name}! ✨\n⚡ Удар: +${STAGES[newStage].clickPower} 🍪`);
-
-        if (STAGES[newStage].name.includes("ГЕЙМЕР")) {
-            setTimeout(() => alert("🕹️ TO BE CONTINUED..."), 500);
-        }
-        
-        checkAchievements();
+    if (!achievements.ach3 && game.totalCookies >= 2000000) {
+        achievements.ach3 = true;
+        showNotification('🏆 ДОСТИЖЕНИЕ: ОСТАНОВИСЬ');
+        game.clickPower += 200;
+        changed = true;
     }
+    if (changed) { updateUI(); saveGame(); }
 }
 
-// ========== ПОКУПКА УЛУЧШЕНИЙ ==========
+function updateUI() {
+    document.getElementById('cookieAmount').textContent = Math.floor(game.cookies);
+    document.getElementById('clickPower').textContent = game.clickPower;
+    document.getElementById('stage').textContent = `${game.stage}/${STAGES.length - 1}`;
+    
+    if (game.stage < STAGES.length - 1) {
+        const nextStage = STAGES[game.stage + 1];
+        document.getElementById('nextStageName').textContent = nextStage.name;
+        document.getElementById('nextStagePrice').textContent = nextStage.required;
+        let progress = (game.totalCookies / nextStage.required) * 100;
+        document.getElementById('progressFill').style.width = Math.min(progress, 100) + '%';
+    } else {
+        document.getElementById('nextStageName').textContent = 'МАКСИМУМ';
+        document.getElementById('nextStagePrice').textContent = '∞';
+        document.getElementById('progressFill').style.width = '100%';
+    }
+    
+    document.getElementById('clickPowerPrice').textContent = game.upgrades.clickPower.price + ' 🍪';
+    document.getElementById('clickPowerLevel').textContent = 'Ур. ' + game.upgrades.clickPower.level;
+    document.getElementById('autoClickerPrice').textContent = game.upgrades.autoClicker.price + ' 🍪';
+    document.getElementById('autoClickerLevel').textContent = 'Ур. ' + game.upgrades.autoClicker.level;
+}
+
 function buyUpgrade(type) {
     const upgrade = game.upgrades[type];
     if (game.cookies >= upgrade.price) {
@@ -228,26 +281,17 @@ function buyUpgrade(type) {
         updateUI();
         saveGame();
         checkAchievements();
+    } else {
+        alert("❌ НЕ ХВАТАЕТ КУКИ!");
     }
 }
 
-// ========== ДОНАТ ==========
 function donate() {
     if (game.cookies >= 10000) {
         game.cookies -= 10000;
         game.upgrades.clickPower.price = 50;
         game.upgrades.autoClicker.price = 50;
-        
-        const bubble = document.getElementById('speechBubble');
-        bubble.textContent = "💰 СПАСИБО!";
-        bubble.classList.add('show');
-        setTimeout(() => bubble.classList.remove('show'), 3000);
-        
-        document.getElementById('catPhrase').textContent = "ДОНАТЕР КОТА!";
-        setTimeout(() => {
-            document.getElementById('catPhrase').textContent = "КЛИКНИ МЕНЯ!";
-        }, 3000);
-        
+        showCatMessage("💰 СПАСИБО!");
         updateUI();
         saveGame();
     } else {
@@ -255,29 +299,67 @@ function donate() {
     }
 }
 
-// ========== ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ==========
-function updateUI() {
-    document.getElementById('cookieAmount').textContent = Math.floor(game.cookies);
-    document.getElementById('clickPower').textContent = game.clickPower;
-    document.getElementById('stage').textContent = `${game.stage}/${STAGES.length - 1}`;
-
-    if (game.stage < STAGES.length - 1) {
-        const nextStage = STAGES[game.stage + 1];
-        document.getElementById('nextStageName').textContent = nextStage.name;
-        document.getElementById('nextStagePrice').textContent = nextStage.required;
-        let progress = (game.totalCookies / nextStage.required) * 100;
-        document.getElementById('progressFill').style.width = Math.min(progress, 100) + '%';
-    } else {
-        document.getElementById('nextStageName').textContent = 'МАКСИМУМ';
-        document.getElementById('nextStagePrice').textContent = '∞';
-        document.getElementById('progressFill').style.width = '100%';
+function resetGame() {
+    if (confirm('🔄 НАЧАТЬ СНАЧАЛА? (ВЕЧНАЯ АЧИВКА ОСТАНЕТСЯ)')) {
+        game = {
+            cookies: 0,
+            totalCookies: 0,
+            clickPower: 1,
+            stage: 0,
+            upgrades: {
+                clickPower: { level: 1, price: 50 },
+                autoClicker: { level: 0, price: 100 }
+            }
+        };
+        
+        if (confirm('Сбросить обычные ачивки? (Tylko jedno останется)')) {
+            achievements = { ach1: false, ach2: false, ach3: false };
+        }
+        
+        totalClicks = 0;
+        clickStreak = 0;
+        
+        document.getElementById('cat').style.backgroundImage = `url('${STAGES[0].image}')`;
+        document.body.className = '';
+        document.body.classList.add('stage-0');
+        
+        startTime = Date.now() / 1000;
+        saveGame();
+        updateUI();
+        showNotification('Игра сброшена! Вечная ачивка сохранена.');
     }
-
-    document.getElementById('clickPowerPrice').textContent = game.upgrades.clickPower.price + ' 🍪';
-    document.getElementById('clickPowerLevel').textContent = 'Ур. ' + game.upgrades.clickPower.level;
-    document.getElementById('autoClickerPrice').textContent = game.upgrades.autoClicker.price + ' 🍪';
-    document.getElementById('autoClickerLevel').textContent = 'Ур. ' + game.upgrades.autoClicker.level;
 }
+
+// ========== КЛИК ПО КОТУ ==========
+document.getElementById('cat').addEventListener('click', function() {
+    game.cookies += game.clickPower;
+    game.totalCookies += game.clickPower;
+    totalClicks++;
+    
+    checkClickStreak();
+    checkCookieMilestones();
+    
+    this.style.transform = 'scale(1.2)';
+    setTimeout(() => { if (this) this.style.transform = 'scale(1)'; }, 100);
+    
+    const randomPhrase = CAT_PHRASES[Math.floor(Math.random() * CAT_PHRASES.length)];
+    const bubble = document.getElementById('speechBubble');
+    if (bubble) {
+        bubble.textContent = randomPhrase;
+        bubble.classList.add('show');
+        setTimeout(() => bubble.classList.remove('show'), 4000);
+    }
+    
+    document.getElementById('catPhrase').textContent = randomPhrase;
+    setTimeout(() => {
+        document.getElementById('catPhrase').textContent = "КЛИКНИ МЕНЯ!";
+    }, 5000);
+    
+    checkStage();
+    updateUI();
+    saveGame();
+    checkAchievements();
+});
 
 // ========== АВТОКЛИКЕР ==========
 setInterval(function() {
@@ -291,41 +373,38 @@ setInterval(function() {
     }
 }, 1000);
 
-// ========== СБРОС ==========
-function resetGame() {
-    if (confirm('🔄 НАЧАТЬ СНАЧАЛА?')) {
-        game = {
-            cookies: 0,
-            totalCookies: 0,
-            clickPower: 1,
-            stage: 0,
-            upgrades: {
-                clickPower: { level: 1, price: 50 },
-                autoClicker: { level: 0, price: 100 }
-            }
-        };
-        
-        if (confirm('Сбросить ачивки?')) {
-            achievements = { ach1: false, ach2: false, ach3: false };
-            document.getElementById('ach1')?.classList.remove('unlocked');
-            document.getElementById('ach2')?.classList.remove('unlocked');
-            document.getElementById('ach3')?.classList.remove('unlocked');
-        }
-
-        document.getElementById('cat').style.backgroundImage = `url('${STAGES[0].image}')`;
-        document.body.className = '';
-        document.body.classList.add('stage-0');
-        
-        startTime = Date.now() / 1000;
-        saveGame();
-        updateUI();
-    }
-}
-
 // ========== ЗАПУСК ==========
 window.onload = function() {
     loadGame();
     document.body.classList.add(`stage-${game.stage}`);
     document.getElementById('cat').style.backgroundImage = `url('${STAGES[game.stage].image}')`;
     startTime = Date.now() / 1000;
+    initCornerItem();
+    document.getElementById('achievementsBtn').onclick = showAchievementsWindow;
+};
+// ========== СЕКРЕТНАЯ КОМАНДА: ПРИНУДИТЕЛЬНО ПОКАЗАТЬ ЯБЛОКО ==========
+window.forceApple = function() {
+    const corner = document.getElementById('cornerItem');
+    if (corner) {
+        corner.innerHTML = '<div style="font-size: 32px;">🍎</div>';
+        corner.dataset.type = 'apple';
+        
+        corner.onclick = () => {
+            window.open('https://rutube.ru/video/055e34d68e4e80a6145efdf512aeb86e/?r=wd', '_blank');
+            if (typeof permanentAchievements !== 'undefined' && !permanentAchievements.polish) {
+                permanentAchievements.polish = true;
+                if (typeof saveGame === 'function') saveGame();
+                if (typeof showNotification === 'function') {
+                    showNotification('🏆 НОВОЕ ДОСТИЖЕНИЕ: Tylko jedno w głowie mam!');
+                }
+                if (typeof showCatMessage === 'function') {
+                    showCatMessage('Tylko jedno w głowie mam...');
+                }
+            }
+        };
+        
+        console.log('%c🍎 ЯБЛОКО ПРИЗВАНО!', 'color: #ff6600; font-size: 14px;');
+    } else {
+        console.log('%c❌ Элемент cornerItem не найден!', 'color: red;');
+    }
 };
